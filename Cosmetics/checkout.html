@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auréa Collection — Checkout</title>
+    <meta name="theme-color" content="#0B0B0C">
+    <link rel="stylesheet" href="Styles/critical.css">
+    <link rel="stylesheet" href="Styles/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header site-header--compact">
+        <nav class="site-nav" aria-label="Main">
+            <ul>
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li>
+                    <a href="cart.html" class="nav-link">Cart
+                        <span id="cart-badge" class="cart-badge hidden" aria-live="polite">0</span>
+                    </a>
+                </li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="page-main">
+        <section class="section page-section">
+            <h2>Checkout</h2>
+            <div class="checkout-layout">
+                <div id="checkout-summary" class="checkout-summary" aria-live="polite"></div>
+                <form id="checkout-form" class="checkout-form" onsubmit="return placeOrder(event)">
+                    <h3 class="checkout-form-title">Shipping details</h3>
+                    <label for="checkout-fullname">Full name</label>
+                    <input type="text" id="checkout-fullname" name="fullname" autocomplete="name" required placeholder="Full name">
+
+                    <label for="checkout-email">Email</label>
+                    <input type="email" id="checkout-email" name="email" autocomplete="email" required placeholder="Email">
+
+                    <label for="checkout-phone">Phone</label>
+                    <input type="tel" id="checkout-phone" name="phone" autocomplete="tel" required placeholder="Phone">
+
+                    <label for="checkout-address">Address</label>
+                    <input type="text" id="checkout-address" name="address" autocomplete="street-address" required placeholder="Street address">
+
+                    <label for="checkout-address2">Apartment, suite, etc. <span class="label-optional">(optional)</span></label>
+                    <input type="text" id="checkout-address2" name="address2" autocomplete="address-line2" placeholder="Apt, suite, unit">
+
+                    <div class="checkout-row">
+                        <div class="checkout-field">
+                            <label for="checkout-city">City</label>
+                            <input type="text" id="checkout-city" name="city" autocomplete="address-level2" required placeholder="City">
+                        </div>
+                        <div class="checkout-field">
+                            <label for="checkout-state">State / Province</label>
+                            <input type="text" id="checkout-state" name="state" autocomplete="address-level1" required placeholder="State">
+                        </div>
+                    </div>
+
+                    <div class="checkout-row">
+                        <div class="checkout-field">
+                            <label for="checkout-zip">Postal code</label>
+                            <input type="text" id="checkout-zip" name="zip" autocomplete="postal-code" required placeholder="ZIP / Postal">
+                        </div>
+                        <div class="checkout-field">
+                            <label for="checkout-country">Country</label>
+                            <input type="text" id="checkout-country" name="country" autocomplete="country-name" required placeholder="Country">
+                        </div>
+                    </div>
+
+                    <label for="checkout-notes">Order notes <span class="label-optional">(optional)</span></label>
+                    <textarea id="checkout-notes" name="notes" rows="3" placeholder="Delivery instructions"></textarea>
+
+                    <fieldset class="payment-fieldset">
+                        <legend class="payment-legend">Payment</legend>
+                        <p class="payment-intro">Retail checkout — pay by cash when your order arrives, or via GCash / Maya wallet.</p>
+                        <div class="payment-options" role="radiogroup" aria-label="Payment method">
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="cod" checked required onchange="syncPaymentPanels()">
+                                <span class="payment-option-body">
+                                    <span class="payment-option-title">Cash on delivery</span>
+                                    <span class="payment-option-desc">Pay the courier when your package arrives</span>
+                                </span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="wallet" onchange="syncPaymentPanels()">
+                                <span class="payment-option-body">
+                                    <span class="payment-option-title">e-Wallet (GCash / Maya)</span>
+                                    <span class="payment-option-desc">Send payment through GCash or Maya before shipping</span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div id="payment-panel-cod" class="payment-panel">
+                            <p class="payment-panel-note">Please prepare cash for the rider. Ask for an official receipt on delivery.</p>
+                        </div>
+                        <div id="payment-panel-wallet" class="payment-panel hidden">
+                            <p class="payment-panel-note">After you place your order, we will email or SMS our GCash / Maya number and the exact amount. Shipments are released once payment is confirmed.</p>
+                        </div>
+                    </fieldset>
+
+                    <button type="submit" class="btn-place-order">Place order</button>
+                    <a class="cart-link-btn btn-secondary-outline" href="cart.html">Back to cart</a>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Sound European Collections. All rights reserved.</p>
+    </footer>
+
+    <script src="Scripts/core.js"></script>
+    <script src="Scripts/page-transitions.js"></script>
+    <script src="Scripts/sample-products-fallback.js"></script>
+    <script src="Scripts/catalog.js"></script>
+    <script src="Scripts/cart.js"></script>
+    <script src="Scripts/checkout.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            await initializeProducts();
+            renderCheckoutSummary();
+            updateCartBadge();
+        });
+    </script>
+</body>
+</html>

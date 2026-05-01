@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auréa Collection — Admin</title>
+    <meta name="theme-color" content="#0B0B0C">
+    <link rel="stylesheet" href="Styles/critical.css">
+    <link rel="stylesheet" href="Styles/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header site-header--compact">
+        <nav class="site-nav" aria-label="Main">
+            <ul>
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li>
+                    <a href="cart.html" class="nav-link">Cart
+                        <span id="cart-badge" class="cart-badge hidden" aria-live="polite">0</span>
+                    </a>
+                </li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="page-main">
+        <section class="section page-section">
+            <div id="admin-login-panel">
+                <h2>Admin Login</h2>
+                <form id="admin-login-form" onsubmit="return adminLogin(event)">
+                    <input type="text" id="username" placeholder="Username" autocomplete="username" required>
+                    <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+                    <button type="submit">Login</button>
+                </form>
+            </div>
+
+            <div id="admin-authenticated" class="hidden">
+                <div class="admin-panel-header">
+                    <h2>Admin Dashboard</h2>
+                    <button type="button" class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+                <div id="admin-dashboard" class="admin-dashboard">
+                    <h4>Add Product</h4>
+                    <form id="add-product-form" onsubmit="return addProduct(event)">
+                        <label for="product-name">Product name</label>
+                        <input type="text" id="product-name" placeholder="Product Name" required>
+                        <label for="product-short-description">Short description</label>
+                        <textarea id="product-short-description" placeholder="Brief tagline for listings (1–2 sentences)" rows="2" required></textarea>
+                        <label for="product-detailed-descriptions">Detailed description</label>
+                        <textarea id="product-detailed-descriptions" placeholder="Longer story: ingredients, benefits, how to use. Separate paragraphs with a blank line." rows="8" required></textarea>
+                        <input type="number" id="product-price" placeholder="Price (PHP)" step="0.01" min="0" required>
+                        <input type="url" id="product-image" placeholder="Image URL" required>
+                        <button type="submit">Add Product</button>
+                    </form>
+                    <h4>Current Products</h4>
+                    <table id="product-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Short description</th>
+                                <th>Price</th>
+                                <th>Image</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Sound European Collections. All rights reserved.</p>
+    </footer>
+
+    <script src="Scripts/core.js"></script>
+    <script src="Scripts/page-transitions.js"></script>
+    <script src="Scripts/sample-products-fallback.js"></script>
+    <script src="Scripts/catalog.js"></script>
+    <script src="Scripts/cart.js"></script>
+    <script src="Scripts/admin.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            await initializeProducts();
+            syncAdminAuthUI();
+            updateCartBadge();
+        });
+    </script>
+</body>
+</html>
