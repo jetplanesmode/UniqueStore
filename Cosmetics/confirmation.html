@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auréa Collection — Order confirmation</title>
+    <meta name="theme-color" content="#0B0B0C">
+    <link rel="stylesheet" href="Styles/critical.css">
+    <link rel="stylesheet" href="Styles/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header site-header--compact">
+        <nav class="site-nav" aria-label="Main">
+            <ul>
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li>
+                    <a href="cart.html" class="nav-link">Cart
+                        <span id="cart-badge" class="cart-badge hidden" aria-live="polite">0</span>
+                    </a>
+                </li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="page-main">
+        <section class="section page-section">
+            <div id="confirmation-root" class="confirmation-root"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Sound European Collections. All rights reserved.</p>
+    </footer>
+
+    <script src="Scripts/core.js"></script>
+    <script src="Scripts/page-transitions.js"></script>
+    <script src="Scripts/cart.js"></script>
+    <script src="Scripts/confirmation.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            renderConfirmationFromStorage();
+            updateCartBadge();
+        });
+    </script>
+</body>
+</html>

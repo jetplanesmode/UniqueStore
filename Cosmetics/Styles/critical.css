@@ -1,0 +1,8 @@
+/**
+ * Load before styles.css — prevents white flash before the full theme paints.
+ */
+html,
+body {
+  background-color: #0b0b0c;
+  color: #eaeaea;
+}

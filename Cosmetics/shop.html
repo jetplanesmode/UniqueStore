@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auréa Collection — Shop</title>
+    <meta name="theme-color" content="#0B0B0C">
+    <link rel="stylesheet" href="Styles/critical.css">
+    <link rel="stylesheet" href="Styles/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header site-header--compact">
+        <nav class="site-nav" aria-label="Main">
+            <ul>
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="shop.html" class="nav-link is-active">Shop</a></li>
+                <li>
+                    <a href="cart.html" class="nav-link">Cart
+                        <span id="cart-badge" class="cart-badge hidden" aria-live="polite">0</span>
+                    </a>
+                </li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="page-main">
+        <section class="section page-section">
+            <h2>Shop</h2>
+            <div id="product-grid" class="product-grid"></div>
+        </section>
+
+        <div id="product-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <img id="modal-image" src="" alt="">
+                <h3 id="modal-name"></h3>
+                <p id="modal-short-description" class="modal-short-description"></p>
+                <section class="modal-details-section" aria-labelledby="modal-detailed-heading">
+                    <h4 id="modal-detailed-heading" class="modal-detailed-heading">About this product</h4>
+                    <div class="modal-price-cart">
+                        <p id="modal-price" class="modal-price"></p>
+                        <button type="button" class="btn-modal-cart" onclick="addCurrentProductToCart()">Add to Cart</button>
+                    </div>
+                    <div id="modal-detailed-descriptions" class="modal-detailed-descriptions"></div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Sound European Collections. All rights reserved.</p>
+    </footer>
+
+    <script src="Scripts/core.js"></script>
+    <script src="Scripts/page-transitions.js"></script>
+    <script src="Scripts/sample-products-fallback.js"></script>
+    <script src="Scripts/catalog.js"></script>
+    <script src="Scripts/cart.js"></script>
+    <script src="Scripts/modal.js"></script>
+    <script src="Scripts/shop-page.js"></script>
+</body>
+</html>
