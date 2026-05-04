@@ -42,10 +42,10 @@ function apiBaseUrl() {
     if (typeof window.aureaGetApiBase === "function") {
         return window.aureaGetApiBase();
     }
-    return String(window.__AUREA_API_BASE__ || "http://localhost:3000").replace(
-        /\/$/,
-        ""
-    );
+    if (typeof window.__AUREA_API_BASE__ === "string") {
+        return String(window.__AUREA_API_BASE__).replace(/\/$/, "");
+    }
+    return "http://localhost:3000";
 }
 
 async function addProduct(event) {
