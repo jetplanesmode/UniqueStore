@@ -107,7 +107,7 @@ function renderCart() {
         const price = p ? parseFloat(String(p.price)) : 0;
         const lineTotal = price * line.quantity;
         subtotal += lineTotal;
-        const thumb = p ? p.image : "";
+        const thumb = p ? productPrimaryImageUrl(normalizeProduct(p)) : "";
         const desc = p
             ? escapeHtml(p.name)
             : escapeHtml(line.name) + " <em>(unavailable)</em>";

@@ -1,53 +1,79 @@
 /**
- * Product catalog: sample data, migrations, storage seeding, shop/home grids.
- * Depends on: core.js (escapeHtml). Load Scripts/sample-products-fallback.js before this script (optional but recommended for file://).
+ * Product catalog: API-backed list, migrations, localStorage, shop/home grids.
+ * Depends on: core.js (escapeHtml). Catalog data comes from GET /api/product-item (Supabase).
  */
 
 const PLACEHOLDER_IMAGE_MARKERS = ["via.placeholder.com", "placehold.it"];
 
-/** Filled by loadSampleProducts() from data/product-item.json or Scripts/sample-products-fallback.js */
+/** Non-empty strings only; supports legacy single `image` string. */
+function normalizeImageUrlArray(p) {
+    if (Array.isArray(p.image_url)) {
+        return p.image_url
+            .filter((x) => typeof x === "string" && x.trim())
+            .map((s) => s.trim());
+    }
+    if (typeof p.image === "string" && p.image.trim()) {
+        return [p.image.trim()];
+    }
+    return [];
+}
+
+/** First image for cards, cart thumb, modal hero. */
+function productPrimaryImageUrl(p) {
+    const urls = normalizeImageUrlArray(p);
+    return urls[0] ?? "";
+}
+
+/** In-memory cache of the last successful GET /api/product-item response. */
 let sampleProducts = [];
 
-const SAMPLE_PRODUCTS_JSON = "data/product-item.json";
+/** True when the catalog was loaded from the Express API (overwrites localStorage on success). */
+let catalogFromApi = false;
+
+function getApiBase() {
+    if (typeof window !== "undefined" && window.__AUREA_API_BASE__) {
+        return String(window.__AUREA_API_BASE__).replace(/\/$/, "");
+    }
+    return "http://localhost:3000";
+}
+
+/** Clear cached catalog so the next initializeProducts() refetches (e.g. after admin API writes). */
+function invalidateSampleProductsCache() {
+    sampleProducts = [];
+    catalogFromApi = false;
+}
+
+/** Toggle #catalog-loading overlay (home / shop / cart / admin). */
+function setCatalogLoading(isLoading) {
+    const el = document.getElementById("catalog-loading");
+    if (!el) return;
+    el.classList.toggle("hidden", !isLoading);
+    el.setAttribute("aria-hidden", isLoading ? "false" : "true");
+    el.setAttribute("aria-busy", isLoading ? "true" : "false");
+}
 
 async function loadSampleProducts() {
     if (sampleProducts.length > 0) return;
 
-    const urls = [];
-    try {
-        urls.push(new URL(SAMPLE_PRODUCTS_JSON, window.location.href).href);
-    } catch (_) {
-        urls.push(SAMPLE_PRODUCTS_JSON);
-    }
-    if (!urls.includes(SAMPLE_PRODUCTS_JSON)) {
-        urls.push(SAMPLE_PRODUCTS_JSON);
-    }
+    catalogFromApi = false;
+    const apiUrl = `${getApiBase()}/api/product-item`;
 
-    for (const url of urls) {
-        try {
-            const response = await fetch(url, { cache: "no-store" });
-            if (!response.ok) continue;
+    try {
+        const response = await fetch(apiUrl, { cache: "no-store" });
+        if (response.ok) {
             const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
+            if (Array.isArray(data)) {
                 sampleProducts = data;
+                catalogFromApi = true;
                 return;
             }
-        } catch (_) {
-            /* try next url */
         }
-    }
-
-    const fb = window.__aureaSampleProductsFallback;
-    if (Array.isArray(fb) && fb.length > 0) {
-        console.warn(
-            "[catalog] Using fallback catalog (could not fetch data/product-item.json)."
-        );
-        sampleProducts = JSON.parse(JSON.stringify(fb));
-        return;
+    } catch (_) {
+        /* network / CORS */
     }
 
     console.warn(
-        "[catalog] No sample products loaded. Serve the Cosmetics folder over HTTP and ensure data/product-item.json exists, or load Scripts/sample-products-fallback.js before catalog.js."
+        "[catalog] Could not load catalog from the API. Start the server (npm start) and set window.__AUREA_API_BASE__ if it is not at http://localhost:3000."
     );
 }
 
@@ -139,12 +165,19 @@ function normalizeProduct(p) {
         );
     }
 
-    const { description: _omit, detailedDescription: _omitSingular, ...rest } =
-        p;
+    const image_url = normalizeImageUrlArray(p);
+    const {
+        description: _omit,
+        detailedDescription: _omitSingular,
+        image: _omitImg,
+        image_url: _omitOldArr,
+        ...rest
+    } = p;
     return {
         ...rest,
         shortDescription,
         detailedDescriptions,
+        image_url,
     };
 }
 
@@ -185,15 +218,18 @@ function migrateProductsSchema(products) {
 }
 
 function migrateLegacyProductImages(products) {
-    const fallbacks = sampleProducts.map((p) => p.image);
+    const fallbacks = sampleProducts.map((s) => productPrimaryImageUrl(s));
     let changed = false;
     const next = products.map((p, i) => {
+        const urls = normalizeImageUrlArray(p);
+        const primary = urls[0] || "";
         const bad =
-            !p.image ||
-            PLACEHOLDER_IMAGE_MARKERS.some((m) => String(p.image).includes(m));
+            urls.length === 0 ||
+            PLACEHOLDER_IMAGE_MARKERS.some((m) => primary.includes(m));
         if (bad) {
             changed = true;
-            return { ...p, image: fallbacks[i % fallbacks.length] };
+            const fb = fallbacks[i % fallbacks.length];
+            return { ...p, image_url: fb ? [fb] : [] };
         }
         return p;
     });
@@ -219,13 +255,51 @@ function mergeMissingSampleProducts(stored) {
     return { products: merged, changed };
 }
 
+/**
+ * Refresh `image_url` from loaded sample JSON when localStorage still has a
+ * legacy single `image` or only one URL — needed for card carousels.
+ */
+function mergeImageUrlsFromSamples(stored) {
+    if (!Array.isArray(sampleProducts) || sampleProducts.length === 0) {
+        return { products: stored, changed: false };
+    }
+    const byName = new Map(
+        sampleProducts.map((s) => [s.name, normalizeImageUrlArray(s)])
+    );
+    let changed = false;
+    const next = stored.map((p) => {
+        const name = typeof p.name === "string" ? p.name : "";
+        const sampleUrls = byName.get(name);
+        if (!sampleUrls || sampleUrls.length < 2) return p;
+        const current = normalizeImageUrlArray(p);
+        if (sampleUrls.length > current.length || current.length < 2) {
+            changed = true;
+            return { ...p, image_url: sampleUrls };
+        }
+        return p;
+    });
+    return { products: next, changed };
+}
+
 async function initializeProducts() {
     await loadSampleProducts();
+
+    if (catalogFromApi) {
+        const normalized = sampleProducts.map((p) => normalizeProduct(p));
+        localStorage.setItem("products", JSON.stringify(normalized));
+        return;
+    }
+
     const stored = JSON.parse(localStorage.getItem("products")) || [];
     if (stored.length === 0) {
         localStorage.setItem("products", JSON.stringify(sampleProducts));
     } else {
         let working = stored;
+        const urlMerge = mergeImageUrlsFromSamples(working);
+        if (urlMerge.changed) {
+            working = urlMerge.products;
+            localStorage.setItem("products", JSON.stringify(working));
+        }
         const imgFix = migrateLegacyProductImages(working);
         if (imgFix.changed) {
             working = imgFix.products;
@@ -249,33 +323,123 @@ function getProductShortDescription(product) {
     return "";
 }
 
+/**
+ * One product card: single image, or carousel (prev/next) when multiple `image_url` values.
+ * @param {object} product
+ * @param {number} productIndex — index in full `products` array (modal / cart)
+ */
+function buildProductCard(product, productIndex) {
+    const card = document.createElement("div");
+    card.className = "product-card";
+
+    const media = document.createElement("div");
+    media.className = "product-card-media";
+    const urls = normalizeImageUrlArray(product);
+
+    if (urls.length === 0) {
+        const ph = document.createElement("div");
+        ph.className = "product-card-no-image";
+        ph.textContent = "No image";
+        media.appendChild(ph);
+    } else if (urls.length === 1) {
+        const img = document.createElement("img");
+        img.src = urls[0];
+        img.alt = product.name || "";
+        media.appendChild(img);
+    } else {
+        const carousel = document.createElement("div");
+        carousel.className = "product-card-carousel";
+        const img = document.createElement("img");
+        img.className = "product-card-carousel-img";
+        img.alt = product.name || "";
+        let idx = 0;
+        img.src = urls[0];
+
+        const prev = document.createElement("button");
+        prev.type = "button";
+        prev.className = "carousel-nav carousel-nav--prev";
+        prev.setAttribute("aria-label", "Previous image");
+        prev.textContent = "‹";
+
+        const next = document.createElement("button");
+        next.type = "button";
+        next.className = "carousel-nav carousel-nav--next";
+        next.setAttribute("aria-label", "Next image");
+        next.textContent = "›";
+
+        function go(delta) {
+            idx = (idx + delta + urls.length) % urls.length;
+            img.src = urls[idx];
+        }
+        prev.addEventListener("click", (e) => {
+            e.stopPropagation();
+            go(-1);
+        });
+        next.addEventListener("click", (e) => {
+            e.stopPropagation();
+            go(1);
+        });
+
+        carousel.appendChild(prev);
+        carousel.appendChild(img);
+        carousel.appendChild(next);
+        media.appendChild(carousel);
+    }
+
+    card.appendChild(media);
+
+    const h3 = document.createElement("h3");
+    h3.textContent = product.name || "";
+
+    const priceEl = document.createElement("p");
+    priceEl.className = "product-card-price";
+    priceEl.textContent = formatPhp(product.price);
+
+    card.appendChild(h3);
+    card.appendChild(priceEl);
+
+    const rawShort = getProductShortDescription(product);
+    if (rawShort) {
+        const tag = document.createElement("p");
+        tag.className = "product-card-tagline";
+        tag.title = rawShort;
+        tag.textContent = rawShort;
+        card.appendChild(tag);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "product-card-actions";
+
+    const btnView = document.createElement("button");
+    btnView.type = "button";
+    btnView.textContent = "View Details";
+
+    const btnCart = document.createElement("button");
+    btnCart.type = "button";
+    btnCart.textContent = "Add to Cart";
+    btnCart.addEventListener("click", (e) => {
+        e.stopPropagation();
+        addToCartByProductIndex(productIndex);
+    });
+
+    actions.appendChild(btnView);
+    actions.appendChild(btnCart);
+    card.appendChild(actions);
+
+    card.addEventListener("click", () => openModal(productIndex));
+
+    return card;
+}
+
 function renderFeaturedProducts() {
     const products = JSON.parse(localStorage.getItem("products")) || [];
     const container = document.getElementById("featured-products");
     if (!container) return;
     container.innerHTML = "";
     const featured = products.slice(0, 3);
-    featured.forEach((product, index) => {
-        const card = document.createElement("div");
-        card.className = "product-card";
-        const rawShort = getProductShortDescription(product);
-        const taglineBlock = rawShort
-            ? `<p class="product-card-tagline" title="${escapeHtml(rawShort)}">${escapeHtml(rawShort)}</p>`
-            : "";
-        card.innerHTML = `
-            <img src="${product.image}" alt="${product.name}">
-            <h3>${product.name}</h3>
-            <p class="product-card-price">${formatPhp(product.price)}</p>
-            ${taglineBlock}
-            <div class="product-card-actions">
-                <button type="button">View Details</button>
-                <button type="button" onclick="event.stopPropagation(); addToCartByProductIndex(${index})">Add to Cart</button>
-            </div>
-        `;
-        card.addEventListener("click", function () {
-            openModal(index);
-        });
-        container.appendChild(card);
+    featured.forEach((product) => {
+        const productIndex = products.indexOf(product);
+        container.appendChild(buildProductCard(product, productIndex));
     });
 }
 
@@ -285,25 +449,11 @@ function renderShopGrid() {
     if (!productGrid) return;
     productGrid.innerHTML = "";
     products.forEach((product, index) => {
-        const card = document.createElement("div");
-        card.className = "product-card";
-        const rawShort = getProductShortDescription(product);
-        const taglineBlock = rawShort
-            ? `<p class="product-card-tagline" title="${escapeHtml(rawShort)}">${escapeHtml(rawShort)}</p>`
-            : "";
-        card.innerHTML = `
-            <img src="${product.image}" alt="${product.name}">
-            <h3>${product.name}</h3>
-            <p class="product-card-price">${formatPhp(product.price)}</p>
-            ${taglineBlock}
-            <div class="product-card-actions">
-                <button type="button">View Details</button>
-                <button type="button" onclick="event.stopPropagation(); addToCartByProductIndex(${index})">Add to Cart</button>
-            </div>
-        `;
-        card.addEventListener("click", function () {
-            openModal(index);
-        });
-        productGrid.appendChild(card);
+        productGrid.appendChild(buildProductCard(product, index));
     });
+}
+
+if (typeof window !== "undefined") {
+    window.aureaGetApiBase = getApiBase;
+    window.invalidateSampleProductsCache = invalidateSampleProductsCache;
 }

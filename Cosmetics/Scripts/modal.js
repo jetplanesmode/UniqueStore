@@ -10,7 +10,7 @@ function openModal(index) {
     const product = normalizeProduct(products[index]);
     modalProductIndex = index;
     const modalImg = document.getElementById("modal-image");
-    modalImg.src = product.image;
+    modalImg.src = productPrimaryImageUrl(product);
     modalImg.alt = product.name;
     document.getElementById("modal-name").innerText = product.name;
     document.getElementById("modal-short-description").innerText =
