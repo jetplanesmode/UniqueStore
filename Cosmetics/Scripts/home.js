@@ -1,5 +1,10 @@
 document.addEventListener("DOMContentLoaded", async () => {
-    await initializeProducts();
-    renderFeaturedProducts();
+    setCatalogLoading(true);
+    try {
+        await initializeProducts();
+        renderFeaturedProducts();
+    } finally {
+        setCatalogLoading(false);
+    }
     updateCartBadge();
 });

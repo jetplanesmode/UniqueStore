@@ -10,6 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="catalog-loading" class="catalog-loading" role="status" aria-live="polite" aria-busy="true">
+        <div class="catalog-loading-inner">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p class="catalog-loading-text">Loading products…</p>
+        </div>
+    </div>
     <header class="site-header">
         <nav class="site-nav" aria-label="Main">
             <ul>
@@ -30,7 +36,7 @@
     </header>
 
     <main class="page-main">
-        <section class="section page-section">
+        <section class="section page-section catalog-body">
             <h2>Featured Products</h2>
             <div id="featured-products" class="product-grid"></div>
         </section>
@@ -59,7 +65,7 @@
 
     <script src="Scripts/core.js"></script>
     <script src="Scripts/page-transitions.js"></script>
-    <script src="Scripts/sample-products-fallback.js"></script>
+    <script>window.__AUREA_API_BASE__ = window.__AUREA_API_BASE__ || 'http://localhost:3000';</script>
     <script src="Scripts/catalog.js"></script>
     <script src="Scripts/cart.js"></script>
     <script src="Scripts/modal.js"></script>
