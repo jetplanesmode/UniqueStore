@@ -31,7 +31,10 @@ let sampleProducts = [];
 let catalogFromApi = false;
 
 function getApiBase() {
-    if (typeof window !== "undefined" && window.__AUREA_API_BASE__) {
+    if (
+        typeof window !== "undefined" &&
+        typeof window.__AUREA_API_BASE__ === "string"
+    ) {
         return String(window.__AUREA_API_BASE__).replace(/\/$/, "");
     }
     return "http://localhost:3000";
@@ -73,7 +76,7 @@ async function loadSampleProducts() {
     }
 
     console.warn(
-        "[catalog] Could not load catalog from the API. Start the server (npm start) and set window.__AUREA_API_BASE__ if it is not at http://localhost:3000."
+        "[catalog] Could not load catalog from the API. Check Cosmetics/Scripts/api-config.js (production URL) or run the API locally on port 3000."
     );
 }
 
