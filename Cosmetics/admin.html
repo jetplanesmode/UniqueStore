@@ -10,6 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="catalog-loading" class="catalog-loading" role="status" aria-live="polite" aria-busy="true">
+        <div class="catalog-loading-inner">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p class="catalog-loading-text">Loading products…</p>
+        </div>
+    </div>
     <header class="site-header site-header--compact">
         <nav class="site-nav" aria-label="Main">
             <ul>
@@ -26,7 +32,7 @@
     </header>
 
     <main class="page-main">
-        <section class="section page-section">
+        <section class="section page-section catalog-body">
             <div id="admin-login-panel">
                 <h2>Admin Login</h2>
                 <form id="admin-login-form" onsubmit="return adminLogin(event)">
@@ -46,12 +52,22 @@
                     <form id="add-product-form" onsubmit="return addProduct(event)">
                         <label for="product-name">Product name</label>
                         <input type="text" id="product-name" placeholder="Product Name" required>
+                        <label for="product-category-slug">Category</label>
+                        <select id="product-category-slug" name="category_slug" required>
+                            <option value="" disabled selected>Select a category</option>
+                            <option value="accessories">Accessories</option>
+                            <option value="makeup">Makeup</option>
+                            <option value="alcohol">Alcohol</option>
+                            <option value="lipsticks">Lipsticks</option>
+                        </select>
                         <label for="product-short-description">Short description</label>
                         <textarea id="product-short-description" placeholder="Brief tagline for listings (1–2 sentences)" rows="2" required></textarea>
                         <label for="product-detailed-descriptions">Detailed description</label>
                         <textarea id="product-detailed-descriptions" placeholder="Longer story: ingredients, benefits, how to use. Separate paragraphs with a blank line." rows="8" required></textarea>
                         <input type="number" id="product-price" placeholder="Price (PHP)" step="0.01" min="0" required>
-                        <input type="url" id="product-image" placeholder="Image URL" required>
+                        <label for="product-image-urls">Image URLs</label>
+                        <textarea id="product-image-urls" name="image_urls" rows="5" required placeholder="https://example.com/image-1.jpg&#10;https://example.com/image-2.jpg"></textarea>
+                        <p class="admin-form-hint">One https URL per line. Extra lines are used as gallery images in the shop.</p>
                         <button type="submit">Add Product</button>
                     </form>
                     <h4>Current Products</h4>
@@ -78,13 +94,18 @@
 
     <script src="Scripts/core.js"></script>
     <script src="Scripts/page-transitions.js"></script>
-    <script src="Scripts/sample-products-fallback.js"></script>
+    <script>window.__AUREA_API_BASE__ = window.__AUREA_API_BASE__ || 'http://localhost:3000';</script>
     <script src="Scripts/catalog.js"></script>
     <script src="Scripts/cart.js"></script>
     <script src="Scripts/admin.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            await initializeProducts();
+            setCatalogLoading(true);
+            try {
+                await initializeProducts();
+            } finally {
+                setCatalogLoading(false);
+            }
             syncAdminAuthUI();
             updateCartBadge();
         });
